@@ -1,0 +1,14 @@
+ultralytics>=8.0.0
+torch>=2.0.0
+torchvision
+roboflow
+opencv-python
+Pillow
+matplotlib
+numpy
+pandas
+fastapi
+uvicorn
+streamlit
+python-multipart
+jupyter
