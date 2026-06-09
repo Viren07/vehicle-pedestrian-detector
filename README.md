@@ -40,3 +40,8 @@ streamlit run app/frontend/streamlit_app.py  # terminal 2
 - **mAP** (mean Average Precision): main evaluation metric
 - **NMS** (Non-Maximum Suppression): removes duplicate detections
 - **Confidence threshold**: minimum score to show a detection
+
+
+## In order to run the project the required dataset can be found:
+
+- https://universe.roboflow.com/pedro-azevedo-3c9ol/bdd100k-3zgda/dataset/5
