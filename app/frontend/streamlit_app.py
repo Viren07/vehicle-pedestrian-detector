@@ -2,7 +2,7 @@
 Phase 3 — Streamlit frontend.
 Run: streamlit run app/frontend/streamlit_app.py
 """
-
+import base64
 import streamlit as st, requests
 
 st.set_page_config(page_title="Vehicle & Pedestrian Detector", layout="wide")
@@ -15,7 +15,7 @@ if uploaded:
     col1, col2 = st.columns(2)
     with col1:
         st.subheader("Input")
-        st.image(uploaded, use_column_width=True)
+        st.image(uploaded, use_container_width=True)
     with col2:
         st.subheader("Detections")
         with st.spinner("Detecting..."):
@@ -26,5 +26,7 @@ if uploaded:
             st.metric("Objects detected", data["count"])
             for d in data["detections"]:
                 st.write(f"**{d['class']}** — {d['confidence']*100:.1f}%")
+            st.subheader("Annotated Image")
+            st.image(base64.b64decode(data["annotated_image"]), use_container_width=True)
         else:
             st.error("Backend not running. Start with: uvicorn app.backend.main:app --reload")
