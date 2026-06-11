@@ -5,7 +5,7 @@ Run: uvicorn app.backend.main:app --reload
 import base64
 import cv2
 from fastapi import FastAPI, File, UploadFile
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 import tempfile, shutil, os
 from ultralytics import YOLO
 
@@ -37,3 +37,38 @@ async def detect_image(file: UploadFile = File(...)):
     "count": len(detections),
     "annotated_image": annotated_b64
 })
+
+@app.post("/detect/video")
+async def detect_video(file: UploadFile = File(...)):
+    # Save uploaded video to temp
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp:
+        shutil.copyfileobj(file.file, tmp)
+        input_path = tmp.name
+
+    output_path = input_path.replace(".mp4", "_annotated.mp4")
+
+    cap = cv2.VideoCapture(input_path)
+    fps    = int(cap.get(cv2.CAP_PROP_FPS))
+    width  = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    writer = cv2.VideoWriter(
+        output_path,
+        cv2.VideoWriter_fourcc(*"acv1"),
+        fps,
+        (width, height)
+    )
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+        results = model(frame, conf=0.4, verbose=False)
+        annotated = results[0].plot()
+        writer.write(annotated)
+
+    cap.release()
+    writer.release()
+    os.unlink(input_path)
+
+    return FileResponse(output_path, media_type="video/mp4", filename="annotated_video.mp4")
