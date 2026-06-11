@@ -45,3 +45,20 @@ streamlit run app/frontend/streamlit_app.py  # terminal 2
 ## In order to run the project the required dataset can be found:
 
 - https://universe.roboflow.com/pedro-azevedo-3c9ol/bdd100k-3zgda/dataset/5
+
+
+## Model Performance
+
+Fine-tuned YOLOv8n on BDD100K dataset (9,900 images)
+
+| Class | mAP50 |
+|---|---|
+| Car | 66.5% |
+| Traffic Sign | 48.1% |
+| Traffic Light | 42.2% |
+| Pedestrian | 39.7% |
+
+**Overall mAP50: 49.1%**
+
+Limitations: Pedestrian detection is weakest due to class imbalance 
+in training data (7x fewer pedestrian instances than cars).
