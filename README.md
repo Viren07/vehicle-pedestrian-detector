@@ -1,6 +1,28 @@
 # Vehicle & Pedestrian Detector
 
-Real-time object detection for autonomous driving perception using YOLOv8.
+A full-stack computer vision system for autonomous driving perception. Detects cars, pedestrians, traffic lights, and traffic signs in real time using a YOLOv8 model fine-tuned on 9,900 real driving images from the BDD100K dataset.
+
+Built as a learning project targeting the kind of perception pipelines used at Waymo and Tesla.
+
+---
+
+## Project Phases
+
+**Phase 1 — Detection.** Ran YOLOv8 with pretrained COCO weights on webcam and dashcam video to understand the detection pipeline.
+
+**Phase 2 — Custom Training.** Fine-tuned YOLOv8n on 9,900 BDD100K road images over 50 epochs on an RTX 4070, reaching 49.1% mAP50 across 4 classes (car, pedestrian, traffic light, traffic sign).
+
+**Phase 3 — Full Stack App.** Built a FastAPI REST backend serving the model and a Streamlit web interface that displays detections and annotated images.
+
+**Phase 4 — Object Tracking (experimental).** Added DeepOcSort tracking with OSNet ReID for persistent object IDs. Works while objects are visible but IDs can switch during long occlusions since the ReID model is person-trained rather than vehicle-trained.
+
+**Phase 5 — Video Pipeline.** Full video upload, frame-by-frame processing, in-browser playback and download of annotated videos. Redesigned UI with dark glassmorphism theme.
+
+**Phase 6 — Optimization.** Exported model to ONNX format achieving a 2.6x CPU inference speedup.
+
+**Phase 7 — Documentation.** Learning guide, architecture diagram, demo media.
+
+---
 
 ## Quick Start
 
@@ -9,14 +31,9 @@ Real-time object detection for autonomous driving perception using YOLOv8.
 pip install -r requirements.txt
 ```
 
-### Run on webcam
-```bash
-python src/detect.py --source webcam
-```
-
 ### Run the Web App
 
-You need **two terminals**, both at the project root:
+You need two terminals open at the project root:
 
 **Terminal 1 — Backend (FastAPI)**
 ```bash
@@ -47,26 +64,27 @@ python src/train.py --data data/raw/data.yaml --epochs 50
 python src/evaluate.py --weights runs/detect/models/vehicle_pedestrian_v1/weights/best.pt --data data/raw/data.yaml
 ```
 
-## Key Concepts to Learn
-- **IoU** (Intersection over Union): how much two boxes overlap
-- **mAP** (mean Average Precision): main evaluation metric
-- **NMS** (Non-Maximum Suppression): removes duplicate detections
-- **Confidence threshold**: minimum score to show a detection
+### Export to ONNX
+```bash
+python src/export.py
+```
 
+---
 
 ## Dataset
 
-This project uses the BDD100K dataset hosted on Roboflow.
+This project uses the BDD100K dataset hosted on Roboflow — 9,900 dashcam images across day, night, rain, and fog conditions, labeled with bounding boxes for 4 classes.
 
 1. Download version 5 in YOLOv8 format from:
    https://universe.roboflow.com/pedro-azevedo-3c9ol/bdd100k-3zgda/dataset/5
 2. Unzip and place the contents into `data/raw/`
-3. Keep `data.yaml` paths as `train/images` and `valid/images`
+3. Ensure `data.yaml` paths read `train/images` and `valid/images`
 
+---
 
 ## Model Performance
 
-Fine-tuned YOLOv8n on BDD100K dataset (9,900 images)
+Fine-tuned YOLOv8n on BDD100K (9,900 images, 50 epochs, RTX 4070)
 
 | Class | mAP50 |
 |---|---|
@@ -75,46 +93,64 @@ Fine-tuned YOLOv8n on BDD100K dataset (9,900 images)
 | Traffic Light | 42.2% |
 | Pedestrian | 39.7% |
 
-**Overall mAP50: 49.1%**
+**Overall mAP50: 49.1%** — Precision: 68.5% — Recall: 54.8%
 
-## ONNX Optimization
-
-Exported model to ONNX format for faster CPU inference.
+### ONNX Optimization
 
 | Format | ms per frame | FPS |
 |---|---|---|
 | PyTorch (.pt) | 114ms | ~9 fps |
 | ONNX | 44ms | ~23 fps |
 
-**2.6x speedup on CPU** — same weights, same predictions, leaner inference engine.
+**2.6x speedup on CPU** with identical predictions.
 
 ### Known Limitations
-- Pedestrian detection is weakest due to class imbalance (7x fewer pedestrian instances than cars)
-- Tracking IDs can switch during long occlusions — ReID model is person-trained, not vehicle-trained
+- Pedestrian detection is weakest due to class imbalance — 7x fewer pedestrian instances than cars in the training data
+- Tracking IDs can switch during long occlusions — the ReID model (OSNet) is trained on person re-identification data, not vehicles
+- Not real-time on CPU — GPU inference or TensorRT optimization needed for 30+ fps
 
-## Key Concepts to Learn
-- **IoU** (Intersection over Union): how much two boxes overlap
-- **mAP** (mean Average Precision): main evaluation metric
-- **NMS** (Non-Maximum Suppression): removes duplicate detections
-- **Confidence threshold**: minimum score to show a detection
+---
 
+## Tech Stack
 
-## Project Phases
+Python · PyTorch · YOLOv8 (Ultralytics) · OpenCV · FastAPI · Streamlit · CUDA · Roboflow · BoxMOT · ONNX Runtime · Git
 
-This project was built incrementally in phases:
+---
 
-**Phase 1 — Detection.** Ran YOLOv8 with pretrained COCO weights on webcam and dashcam video.
+## Key Concepts
 
-**Phase 2 — Custom Training.** Fine-tuned YOLOv8n on 9,900 BDD100K road images over 50 epochs on an RTX 4070, reaching 49.1% mAP50 across 4 classes (car, pedestrian, traffic light, traffic sign).
+**IoU** (Intersection over Union) — measures how much a predicted box overlaps with the correct box. Used to decide if a detection counts as correct.
 
-**Phase 3 — Full Stack App.** Built a FastAPI REST backend serving the model and a Streamlit web interface that displays detections and annotated images.
+**mAP50** (mean Average Precision at IoU 0.5) — the main evaluation metric. Roughly: how often the model correctly finds and boxes an object.
 
-**Phase 4 — Object Tracking (experimental).** Added DeepOcSort tracking with OSNet ReID for persistent object IDs. Works while objects are visible, but IDs can switch during long occlusions since the ReID model is person-trained rather than vehicle-trained.
+**NMS** (Non-Maximum Suppression) — removes duplicate boxes when multiple detections overlap the same object.
 
-**Phase 5 — Video Pipeline.** Full video upload, frame-by-frame processing, in-browser playback and download of annotated videos. Redesigned UI with dark theme.
+**Confidence threshold** — minimum score required to show a detection. Lower = more detections, more false positives. Higher = fewer detections, fewer false positives.
 
-**Phase 6 — Optimization.** ONNX export for faster inference. In progress.
+**Fine-tuning** — starting from a model already trained on general images (COCO) and retraining it on a specific domain (road scenes) so it specializes without starting from scratch.
 
-**Phase 7 — Documentation.** Learning guide, architecture diagram, demo media. Planned.
+**ONNX** — a format for exporting trained models to a leaner inference engine, stripping away training machinery for faster predictions.
+
+---
+
+## Project Structure
+
+```
+vehicle-detector/
+├── src/
+│   ├── detect.py       # Command-line detection on webcam or video
+│   ├── track.py        # Object tracking with persistent IDs
+│   ├── train.py        # Fine-tune YOLOv8 on custom dataset
+│   ├── evaluate.py     # Compute mAP, precision, recall
+│   ├── export.py       # Export to ONNX + speed benchmark
+│   └── utils.py        # Helper functions
+├── app/
+│   ├── backend/        # FastAPI REST API
+│   └── frontend/       # Streamlit web interface
+├── data/
+│   └── raw/            # BDD100K dataset (not tracked in git)
+├── models/             # Saved weights (not tracked in git)
+└── requirements.txt
+```
 
 
