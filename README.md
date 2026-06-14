@@ -9,7 +9,7 @@ Real-time object detection for autonomous driving perception using YOLOv8.
 pip install -r requirements.txt
 ```
 
-### Phase 1 — Run on webcam
+### Run on webcam
 ```bash
 python src/detect.py --source webcam
 ```
@@ -76,6 +76,17 @@ Fine-tuned YOLOv8n on BDD100K dataset (9,900 images)
 | Pedestrian | 39.7% |
 
 **Overall mAP50: 49.1%**
+
+## ONNX Optimization
+
+Exported model to ONNX format for faster CPU inference.
+
+| Format | ms per frame | FPS |
+|---|---|---|
+| PyTorch (.pt) | 114ms | ~9 fps |
+| ONNX | 44ms | ~23 fps |
+
+**2.6x speedup on CPU** — same weights, same predictions, leaner inference engine.
 
 ### Known Limitations
 - Pedestrian detection is weakest due to class imbalance (7x fewer pedestrian instances than cars)
